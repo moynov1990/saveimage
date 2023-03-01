@@ -41,9 +41,12 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
@@ -53,7 +56,7 @@ public class MainActivity extends AppCompatActivity {
     private EditText textFilename;
     private Button btnBrowse, btnCamera, btnUpload;
     private ImageView imageUpload;
-    private Bitmap bitmap;
+    private Bitmap bitmap, bitmapCash;
     private String URL ="http://192.168.2.67/LoginRegister/saveimage.php";
     private final int GALLERY_REQ_CODE = 1000;
     private final int CAMERA_REQ_CODE = 100;
@@ -70,15 +73,36 @@ public class MainActivity extends AppCompatActivity {
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
                 }
-                bitmap = BitmapFactory.decodeStream(inputStream);
-                imageUpload.setImageBitmap(bitmap);
+                bitmapCash = BitmapFactory.decodeStream(inputStream);
+                try {
+                    saveBitmapToCache(bitmapCash);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                imageUpload.setImageBitmap(getBitmapFromCache());
             }
 
             if (requestCode==CAMERA_REQ_CODE) {
-                bitmap = (Bitmap)(data.getExtras().get("data"));
+                bitmapCash = (Bitmap)(data.getExtras().get("data"));
                 imageUpload.setImageBitmap(bitmap);
             }
         }
+    }
+
+    public void saveBitmapToCache(Bitmap bitmap) throws IOException {
+        String filename = "final_image.jpg";
+        File cacheFile = new File(getApplicationContext().getCacheDir(), filename);
+        OutputStream out = new FileOutputStream(cacheFile);
+        bitmap.compress(Bitmap.CompressFormat.JPEG, (int)100, out);
+        out.flush();
+        out.close();
+    }
+
+    public Bitmap getBitmapFromCache(){
+        File cacheFile = new File(getApplicationContext().getCacheDir(), "final_image.jpg");
+        Bitmap myBitmap = BitmapFactory.decodeFile(cacheFile.getAbsolutePath());
+        return myBitmap;
     }
 
     @Override
@@ -165,8 +189,9 @@ public class MainActivity extends AppCompatActivity {
 
             imageUpload.setOnClickListener(new View.OnClickListener() {
                 @Override
-                public void onClick(View view) {
-
+                public void onClick(View v) {
+                    Intent intent = new Intent(MainActivity.this, CropActivity.class);
+                    startActivity(intent);
                 }
             });
 
